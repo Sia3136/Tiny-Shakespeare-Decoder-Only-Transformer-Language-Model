@@ -4,6 +4,8 @@ A minimal, from-scratch implementation of a character-level **Pre-LN Decoder-Onl
 
 Rather than relying on high-level abstractions like `torch.nn.Transformer` or pretrained checkpoints, this project builds every component explicitly—token and positional embeddings, scaled dot-product causal self-attention, residual pathways, a $4\times$ expanded GELU feed-forward network, and autoregressive multinomial generation—to deeply understand the mechanics and limitations of small-scale language models.
 
+I also wrote about the thinking behind this experiment—the design choices, trade-offs, and what I learned along the way—in [Building a Decoder-Only Transformer from Scratch: A Tiny Shakespeare Experiment](https://gradientsandgroundtruth.hashnode.dev/building-a-decoder-only-transformer-from-scratch-a-tiny-shakespeare-experiment).
+
 ---
 
 ## Table of Contents
@@ -12,7 +14,7 @@ Rather than relying on high-level abstractions like `torch.nn.Transformer` or pr
 3. [Training Decisions & Hyperparameters](#3-training-decisions--hyperparameters)
 4. [Results & Empirical Observations](#4-results--empirical-observations)
 5. [Reflections: What Worked, Limitations & Future Improvements](#5-reflections-what-worked-limitations--future-improvements)
-6. [Repository Structure & Usage](#6-repository-structure--usage)
+6. [Repository Structure & Resources](#6-repository-structure--resources)
 
 ---
 
@@ -168,7 +170,8 @@ Fowand ho twsoour Fhand harte omthy, Af IONGHizlsiy milalemss I swe. F
 
 ---
 
-## 6. Repository Structure & Usage
+## 6. Repository Structure & Resources
 
 - [`tiny-shakespeare code.ipynb`](tiny-shakespeare%20code.ipynb) — End-to-end Jupyter Notebook containing data preparation, `RefinedShakespeareTransformer` model definition, 5-epoch training loop, and autoregressive generation.
 - [`input.txt`](input.txt) — Tiny Shakespeare dataset (~1.11M characters).
+- **Blog Post:** [Building a Decoder-Only Transformer from Scratch: A Tiny Shakespeare Experiment](https://gradientsandgroundtruth.hashnode.dev/building-a-decoder-only-transformer-from-scratch-a-tiny-shakespeare-experiment) (Gradients and Ground Truth on Hashnode).
