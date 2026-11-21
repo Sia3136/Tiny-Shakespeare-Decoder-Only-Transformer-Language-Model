@@ -39,33 +39,20 @@ The model was intentionally scoped to a **single-layer, single-head, 16,736-para
 
 ## 2. Architecture & Parameter Breakdown
 
-### Data & Tensor Flow (`[B, T] = [64, 32]`)
-```text
-Input Indices idx [64, 32]
-   │
-   ├──► Token Embedding:      nn.Embedding(65, 32)   ──► tok_emb [64, 32, 32]
-   ├──► Positional Embedding: nn.Embedding(32, 32)   ──► pos_emb [32, 32]
-   │
-   ▼
-Combined Embedding: emb = tok_emb + pos_emb                      [64, 32, 32]
-   │
-   ├──► Pre-LN 1 (self.ln1) ──► Wq, Wk, Wv (32 -> 32, bias=False)
-   │    ──► Scaled Dot-Product: (Q @ K^T) / sqrt(32)             [64, 32, 32]
-   │    ──► Upper-Triangular Causal Mask (-inf) ──► Softmax ──► Dropout(0.1)
-   │    ──► Value Aggregation: attn_weights @ V                  [64, 32, 32]
-   │
-   ▼
-Residual 1: x = emb + attn_out                                   [64, 32, 32]
-   │
-   ├──► Pre-LN 2 (self.ln2) ──► Linear(32 -> 128) ──► GELU()
-   │    ──► Linear(128 -> 32) ──► Dropout(0.1)                   [64, 32, 32]
-   │
-   ▼
-Residual 2: x = x + ffn_out                                      [64, 32, 32]
-   │
-   ▼
-LM Head: Linear(32 -> 65, bias=False) ──► logits                 [64, 32, 65]
+### End-to-End Workflow
+```mermaid
+flowchart LR
+    A["input.txt<br/>(~1.11M chars)"] --> B["Char Tokenizer<br/>(vocab_size = 65)"]
+    B --> C["90:10 Split &<br/>Sequential Batches [64, 32]"]
+    C --> D["RefinedShakespeareTransformer<br/>(16,736 params · 5 Epochs)"]
+    D --> E["Val Perplexity<br/>15.33 → 10.05"]
+    D --> F["Autoregressive Generation<br/>(32-char sliding window)"]
 ```
+
+### Model Architecture (`RefinedShakespeareTransformer`)
+<p align="center">
+  <img src="assets/architecture.png" alt="RefinedShakespeareTransformer Architecture Diagram" width="520" />
+</p>
 
 ### Component Design Decisions
 
@@ -127,7 +114,22 @@ Notice how the $4\times$ expanded Feed-Forward Network accounts for nearly **50%
 - **What Perplexity of `10.05` Means:**
   Perplexity ($\exp(\mathcal{L})$) represents the effective branching factor. Dropping from `65.0` (uniform random guessing over 65 characters) to **`10.0501`** means the model narrowed its uncertainty at each step to ~10 plausible next characters. However, compounding a 10-way character branching factor across a 5-letter word still leaves huge word-level uncertainty—showing why decreasing loss alone does not equate to coherent text.
 
-### Generated Sample Analysis (`max_new_tokens = 200`)
+### What Input & Output Look Like
+
+**Training Input Snippet (`input.txt`):**
+```text
+First Citizen:
+Before we proceed any further, hear me speak.
+
+All:
+Speak, speak.
+
+First Citizen:
+You are all resolved rather to die than to famish?
+```
+During training, each 32-character window `xb` is paired with `yb` shifted right by 1 character (e.g., `"First Citizen:\nBefore we proceed"` $\rightarrow$ `"irst Citizen:\nBefore we proceed "`).
+
+**Generated Model Output (`prompt = '\n'`, `max_new_tokens = 200`):**
 ```text
 KINIUSERLABWhake.
 I thek INF hoo Vonor me whimin
@@ -174,4 +176,5 @@ Fowand ho twsoour Fhand harte omthy, Af IONGHizlsiy milalemss I swe. F
 
 - [`tiny-shakespeare code.ipynb`](tiny-shakespeare%20code.ipynb) — End-to-end Jupyter Notebook containing data preparation, `RefinedShakespeareTransformer` model definition, 5-epoch training loop, and autoregressive generation.
 - [`input.txt`](input.txt) — Tiny Shakespeare dataset (~1.11M characters).
+- [`assets/architecture.png`](assets/architecture.png) — `RefinedShakespeareTransformer` architecture diagram.
 - **Blog Post:** [Building a Decoder-Only Transformer from Scratch: A Tiny Shakespeare Experiment](https://gradientsandgroundtruth.hashnode.dev/building-a-decoder-only-transformer-from-scratch-a-tiny-shakespeare-experiment) (Gradients and Ground Truth on Hashnode).
